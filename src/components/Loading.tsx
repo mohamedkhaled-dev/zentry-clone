@@ -2,156 +2,87 @@
 
 import { useEffect, useState } from "react";
 
-const videoAssets = [
-  "/videos/hero-1.mp4",
-  "/videos/hero-2.mp4",
-  "/videos/hero-3.mp4",
-  "/videos/hero-4.mp4",
-  "/videos/feature-1.mp4",
-  "/videos/feature-2.mp4",
-  "/videos/feature-3.mp4",
-  "/videos/feature-4.mp4",
-  "/videos/feature-5.mp4",
-];
-
-const imageAssets = [
-  "/img/logo.webp",
-  "/img/about.webp",
-  "/img/entrance.webp",
-  "/img/contact-1.webp",
-  "/img/contact-2.webp",
-  "/img/swordman.webp",
-  "/img/swordman-partial.webp",
-  "/img/prologue-1.webp",
-  "/img/prologue-2.webp",
-  "/img/prologue-3.webp",
-  "/img/prologue-4.webp",
-];
-
 interface LoadingProps {
   onComplete: () => void;
 }
 
 const Loading = ({ onComplete }: LoadingProps) => {
   const [progress, setProgress] = useState(0);
-  const totalAssets = videoAssets.length + imageAssets.length;
-
-  const loadImage = (src: string): Promise<void> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.src = src;
-      img.crossOrigin = "anonymous";
-
-      const handleLoad = () => {
-        resolve();
-      };
-
-      const handleError = () => {
-        console.warn(`Failed to load image: ${src}`);
-        resolve();
-      };
-
-      img.onload = handleLoad;
-      img.onerror = handleError;
-
-      setTimeout(() => {
-        img.onload = null;
-        img.onerror = null;
-        resolve();
-      }, 10000);
-    });
-  };
-
-  const loadVideo = (src: string): Promise<void> => {
-    return new Promise((resolve) => {
-      const video = document.createElement("video");
-      video.src = src;
-      video.muted = true;
-      video.preload = "metadata";
-
-      const handleLoad = () => {
-        resolve();
-      };
-
-      const handleError = () => {
-        console.warn(`Failed to load video: ${src}`);
-        resolve();
-      };
-
-      video.onloadedmetadata = handleLoad;
-      video.onerror = handleError;
-
-      setTimeout(() => {
-        video.onloadedmetadata = null;
-        video.onerror = null;
-        resolve();
-      }, 15000);
-
-      video.load();
-    });
-  };
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    let isMounted = true;
     let loadedCount = 0;
-
-    const updateProgress = () => {
-      if (!isMounted) return;
-      const newProgress = Math.floor((loadedCount / totalAssets) * 100);
-      setProgress(newProgress);
-    };
-
-    const loadAssets = async () => {
+    
+    // Only wait for critical resources
+    const checkCriticalResources = async () => {
       try {
-        const allPromises = [
-          ...videoAssets.map((src) =>
-            loadVideo(src).then(() => {
-              if (isMounted) {
-                loadedCount += 1;
-                updateProgress();
-              }
-            })
-          ),
-          ...imageAssets.map((src) =>
-            loadImage(src).then(() => {
-              if (isMounted) {
-                loadedCount += 1;
-                updateProgress();
-              }
-            })
-          ),
+        const criticalImages = [
+          "/videos/hero-1-poster.webp",
+          "/img/logo.webp"
         ];
 
-        await Promise.all(allPromises);
+        const totalAssets = criticalImages.length;
 
-        if (isMounted) {
-          setProgress(100);
-          // Small delay to show 100% completion
-          setTimeout(() => {
-            if (isMounted) {
-              onComplete();
-            }
-          }, 800);
-        }
+        // Load critical images with progress tracking
+        await Promise.all(
+          criticalImages.map(src => 
+            new Promise((resolve) => {
+              const img = new Image();
+              img.src = src;
+              
+              const handleLoad = () => {
+                loadedCount++;
+                const newProgress = Math.floor((loadedCount / totalAssets) * 100);
+                setProgress(newProgress);
+                resolve(true);
+              };
+
+              img.onload = handleLoad;
+              img.onerror = () => {
+                loadedCount++;
+                const newProgress = Math.floor((loadedCount / totalAssets) * 100);
+                setProgress(newProgress);
+                resolve(true);
+              };
+              
+              // Timeout after 3 seconds
+              setTimeout(() => {
+                if (loadedCount < totalAssets) {
+                  loadedCount = totalAssets;
+                  setProgress(100);
+                  resolve(true);
+                }
+              }, 3000);
+            })
+          )
+        );
+
+        setProgress(100);
+        setIsReady(true);
       } catch (error) {
-        console.error("Error Loading assets:", error);
-        if (isMounted) {
-          setProgress(100);
-          setTimeout(() => {
-            if (isMounted) {
-              onComplete();
-            }
-          }, 800);
-        }
+        console.error("Error loading critical resources:", error);
+        setProgress(100);
+        setIsReady(true);
       }
     };
 
-    loadAssets();
+    checkCriticalResources();
 
-    return () => {
-      isMounted = false;
-    };
-  }, [totalAssets, onComplete]);
+    // Maximum loading time of 2 seconds
+    const maxTimeout = setTimeout(() => {
+      setProgress(100);
+      setIsReady(true);
+    }, 2000);
+
+    return () => clearTimeout(maxTimeout);
+  }, []);
+
+  useEffect(() => {
+    if (isReady && progress === 100) {
+      // Small delay for smooth transition
+      setTimeout(onComplete, 500);
+    }
+  }, [isReady, progress, onComplete]);
 
   return (
     <div className="fixed inset-0 bg-violet-50 z-[9999] flex items-center justify-center">
@@ -161,6 +92,8 @@ const Loading = ({ onComplete }: LoadingProps) => {
           <div className="three-body__dot"></div>
           <div className="three-body__dot"></div>
         </div>
+        
+        {/* Progress Bar */}
         <div className="flex flex-col items-center">
           <div
             className="h-1 w-64 bg-violet-100 rounded-full overflow-hidden"
@@ -176,7 +109,7 @@ const Loading = ({ onComplete }: LoadingProps) => {
             />
           </div>
           <p className="mt-2 font-circular-web text-sm text-violet-300">
-            Loading assets... {progress}%
+            Loading... {progress}%
           </p>
         </div>
       </div>

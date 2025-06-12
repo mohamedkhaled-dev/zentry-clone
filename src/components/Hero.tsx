@@ -1,21 +1,23 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Button from "./Button";
 import { TiLocationArrow } from "react-icons/ti";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/all";
+import { LazyVideo } from "./LazyVideo";
+
 gsap.registerPlugin(ScrollTrigger);
 
 const Hero = () => {
   const [currentIndex, setCurrentIndex] = useState(1);
   const [hasClicked, setHasClicked] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadedVideos, setLoadedVideos] = useState(0);
   const [transformStyle, setTransformStyle] = useState("");
 
   const totalVideos = 4;
   const nextVideoRef = useRef<HTMLVideoElement>(null);
+  const currentVideoRef = useRef<HTMLVideoElement>(null);
+  const mainVideoRef = useRef<HTMLVideoElement>(null);
   const maskRef = useRef<HTMLDivElement>(null);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -33,13 +35,9 @@ const Hero = () => {
 
     setTransformStyle(newTransform);
   };
+
   const handleMouseLeave = () => {
     setTransformStyle("");
-    maskRef.current?.classList.remove("inset-ring-black", "inset-ring-2");
-  };
-
-  const handleVideoLoad = () => {
-    setLoadedVideos((prev) => prev + 1);
   };
 
   const upcomingVideoIndex = (currentIndex % totalVideos) + 1;
@@ -49,10 +47,7 @@ const Hero = () => {
     setCurrentIndex(upcomingVideoIndex);
   };
 
-  useEffect(() => {
-    if (loadedVideos === totalVideos - 1) setIsLoading(false);
-  }, [loadedVideos]);
-
+  // GSAP animation using refs and IDs
   useGSAP(
     () => {
       if (hasClicked) {
@@ -88,7 +83,7 @@ const Hero = () => {
 
     gsap.from("#video-frame", {
       clipPath: "polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%)",
-      borderRadius: "0 0 0 0 ",
+      borderRadius: "0 0 0 0",
       ease: "power1.inOut",
       scrollTrigger: {
         trigger: "#video-frame",
@@ -99,72 +94,69 @@ const Hero = () => {
     });
   });
 
-  const getVideoSrc = (index: number) => `videos/hero-${index}.mp4`;
+  const getVideoSrc = (index: number) => `/videos/hero-${index}.mp4`;
+  const getPosterSrc = (index: number) => `/videos/hero-${index}-poster.webp`;
+
   return (
     <div className="relative h-dvh w-screen overflow-x-hidden">
-      {isLoading && (
-        <div className="flex-center absolute bg-violet-50 z-[100] h-dvh w-screen overflow-hidden">
-          <div className="three-body">
-            <div className="three-body__dot"></div>
-            <div className="three-body__dot"></div>
-            <div className="three-body__dot"></div>
-          </div>
-        </div>
-      )}
-
       <div
         id="video-frame"
         className="relative z-10 h-dvh w-screen overflow-hidden rounded-lg bg-blue-75"
       >
         <div>
+          {/* Mini preview video */}
           <div
             ref={maskRef}
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
-            className="mask-clip-path absolute-center absolute z-50 size-64 cursor-pointer overflow-hidden rounded-lg "
+            className="mask-clip-path absolute-center absolute z-50 size-64 cursor-pointer overflow-hidden rounded-lg"
             style={{ transform: transformStyle }}
           >
             <div
               onClick={handleMiniVdClick}
               className="origin-center scale-50 opacity-0 transition-all duration-500 ease-in hover:scale-100 hover:opacity-100"
             >
-              <video
-                ref={nextVideoRef}
-                src={getVideoSrc(upcomingVideoIndex)}
-                loop
-                muted
-                playsInline
-                preload="metadata"
+              <LazyVideo
+                ref={currentVideoRef}
                 id="current-video"
+                src={getVideoSrc(upcomingVideoIndex)}
+                poster={getPosterSrc(upcomingVideoIndex)}
                 className="size-64 origin-center scale-150 object-cover object-center"
-                onLoadedData={handleVideoLoad}
+                priority={false}
+                preload="metadata"
+                loop={false}
+                autoPlay={true}
               />
             </div>
           </div>
 
-          <video
-            ref={nextVideoRef}
-            src={getVideoSrc(currentIndex)}
-            loop
-            muted
-            playsInline
-            preload="metadata"
-            id="next-video"
-            className="absolute-center invisible absolute z-20 size-64 object-cover object-center"
-            onLoadedData={handleVideoLoad}
-          />
+          {/* Next video (hidden, for transition) - Only render when needed */}
+          {hasClicked && (
+            <LazyVideo
+              ref={nextVideoRef}
+              id="next-video"
+              src={getVideoSrc(currentIndex)}
+              poster={getPosterSrc(currentIndex)}
+              className="absolute-center invisible absolute z-20 size-64 object-cover object-center"
+              priority={false}
+              preload="metadata"
+            />
+          )}
 
-          <video
+          {/* Main background video */}
+          <LazyVideo
+            ref={mainVideoRef}
+            id="main-video"
             src={getVideoSrc(
               currentIndex === totalVideos - 1 ? 1 : currentIndex
             )}
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="metadata"
+            poster={getPosterSrc(
+              currentIndex === totalVideos - 1 ? 1 : currentIndex
+            )}
             className="absolute left-0 top-0 size-full object-cover object-center"
-            onLoadedData={handleVideoLoad}
+            priority={true}
+            autoPlay={true}
+            preload="auto"
           />
         </div>
 

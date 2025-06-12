@@ -1,13 +1,14 @@
 "use client";
 import { useRef, useState } from "react";
 import type React from "react";
-
 import { TiLocationArrow } from "react-icons/ti";
+import { LazyVideo } from "./LazyVideo";
 
 type BentoCardProps = {
   src: string;
   title: React.ReactNode;
   description: string;
+  videoId: string; 
 };
 
 const BentoTilt = ({
@@ -50,29 +51,33 @@ const BentoTilt = ({
   );
 };
 
-const BentoCard = ({ src, title, description }: BentoCardProps) => (
-  <div className="relative size-full">
-    <video
-      src={src}
-      loop
-      muted
-      autoPlay
-      playsInline
-      preload="metadata"
-      className="absolute left-0 top-0 size-full object-cover object-center"
-    />
-    <div className="relative z-10 flex size-full flex-col justify-between p-5 text-blue-50">
-      <div>
-        <h1 className="bento-title special-font">{title}</h1>
-        {description && (
-          <p className="font-circular-web mt-3 max-w-64 text-xs md:text-base">
-            {description}
-          </p>
-        )}
+const BentoCard = ({ src, title, description, videoId }: BentoCardProps) => {
+  // Get posterSrc from video source
+  const posterSrc = src.replace(".mp4", "-poster.webp");
+
+  return (
+    <div className="relative size-full">
+      <LazyVideo
+        id={videoId}
+        src={src}
+        poster={posterSrc}
+        className="absolute left-0 top-0 size-full object-cover object-center"
+        priority={false}
+        preload="metadata"
+      />
+      <div className="relative z-10 flex size-full flex-col justify-between p-5 text-blue-50">
+        <div>
+          <h1 className="bento-title special-font">{title}</h1>
+          {description && (
+            <p className="font-circular-web mt-3 max-w-64 text-xs md:text-base">
+              {description}
+            </p>
+          )}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default function Features() {
   return (
@@ -91,7 +96,8 @@ export default function Features() {
 
         <BentoTilt className="border-hsla relative mb-7 h-96 w-full overflow-hidden rounded-md md:h-[65vh]">
           <BentoCard
-            src="videos/feature-1.mp4"
+            src="/videos//feature-1.mp4"
+            videoId="feature-video-1"
             title={
               <>
                 radia<b>n</b>t
@@ -104,7 +110,8 @@ export default function Features() {
         <div className="grid h-[135vh] grid-cols-2 grid-rows-3 gap-7">
           <BentoTilt className="bento-tilt_1 row-span-1 md:!col-span-1 md:row-span-2">
             <BentoCard
-              src="videos/feature-2.mp4"
+              src="/videos//feature-2.mp4"
+              videoId="feature-video-2"
               title={
                 <>
                   zig<b>m</b>a
@@ -116,7 +123,8 @@ export default function Features() {
 
           <BentoTilt className="bento-tilt_1 row-span-1 ms-32 md:!col-span-1 md:ms-0">
             <BentoCard
-              src="videos/feature-3.mp4"
+              src="/videos//feature-3.mp4"
+              videoId="feature-video-3"
               title={
                 <>
                   n<b>e</b>xus
@@ -128,7 +136,8 @@ export default function Features() {
 
           <BentoTilt className="bento-tilt_1 row-span-1 me-14 md:!col-span-1 md:me-0">
             <BentoCard
-              src="videos/feature-4.mp4"
+              src="/videos//feature-4.mp4"
+              videoId="feature-video-4"
               title={
                 <>
                   az<b>u</b>l
@@ -148,14 +157,13 @@ export default function Features() {
           </BentoTilt>
 
           <BentoTilt className="bento-tilt_2">
-            <video
-              src="videos/feature-5.mp4"
-              loop
-              muted
-              autoPlay
-              playsInline
-              preload="metadata"
+            <LazyVideo
+              id="feature-video-5"
+              src="/videos//feature-5.mp4"
+              poster="/videos//feature-5-poster.webp"
               className="size-full object-cover object-center"
+              priority={false}
+              preload="metadata"
             />
           </BentoTilt>
         </div>
