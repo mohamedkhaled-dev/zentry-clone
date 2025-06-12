@@ -20,7 +20,6 @@ interface LazyVideoProps {
   preload?: "none" | "metadata" | "auto";
   onLoadedData?: () => void;
   priority?: boolean;
-  disableRemotePlayback?: boolean;
 }
 
 export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
@@ -37,7 +36,6 @@ export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
       preload = "none",
       onLoadedData,
       priority = false,
-      disableRemotePlayback = true,
     },
     ref
   ) => {
@@ -62,7 +60,7 @@ export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
             if (entry.isIntersecting && !isInView) {
               setIsInView(true);
               // Stagger loading to prevent bandwidth congestion
-              const delay = priority ? 0 : Math.random() * 200;
+              const delay = Math.random() * 200;
               setTimeout(() => setShouldLoad(true), delay);
 
               // Unobserve after first intersection for performance
@@ -85,7 +83,7 @@ export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
           observer.unobserve(videoRef.current);
         }
       };
-    }, [priority]);
+    }, [priority, isInView]); 
 
     // Separate effect for handling video pause when out of view
     useEffect(() => {
@@ -161,11 +159,6 @@ export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
       }
     };
 
-    // Prevent context menu to discourage downloads
-    const handleContextMenu = (e: React.MouseEvent) => {
-      e.preventDefault();
-    };
-
     return (
       <>
         {/* Show poster while loading or on error */}
@@ -196,10 +189,6 @@ export const LazyVideo = forwardRef<HTMLVideoElement, LazyVideoProps>(
           onLoadedData={handleLoadedData}
           onError={handleError}
           onCanPlay={handleCanPlay}
-          onContextMenu={handleContextMenu}
-          controlsList="nodownload nofullscreen noremoteplayback"
-          disablePictureInPicture
-          disableRemotePlayback={disableRemotePlayback}
         />
       </>
     );

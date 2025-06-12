@@ -225,7 +225,7 @@ const Vault = () => {
             id="vault-button"
             title="Secure Your Assets"
             rightIcon={<TiLocationArrow />}
-            containerClass="bg-yellow-300 hover:bg-yellow-400 transition-colors text-black flex h-14 gap-2 items-center justify-center"
+            containerClass="bg-yellow-300 hover:bg-yellow-400 text-black flex h-14 gap-2 items-center justify-center transition-all duration-300"
           />
         </div>
       </div>

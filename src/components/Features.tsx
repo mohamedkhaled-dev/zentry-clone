@@ -8,7 +8,7 @@ type BentoCardProps = {
   src: string;
   title: React.ReactNode;
   description: string;
-  videoId: string; 
+  videoId: string;
 };
 
 const BentoTilt = ({
